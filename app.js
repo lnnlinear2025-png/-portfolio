@@ -879,9 +879,7 @@ function renderPinUnit(group, index) {
   return `
     <div class="pin-item ${position}"
          data-domain-id="${stableId}"
-         data-group="${groupData.replace(/"/g, '&quot;')}"
-         onmouseenter="showTabHoverPanel(this, event)"
-         onmouseleave="scheduleHoverPanelHide()">
+         data-group="${groupData.replace(/"/g, '&quot;')}">
       ${labelHtml}
       <div class="pin-stem"></div>
       <div class="pin-road-dot"></div>
@@ -2710,9 +2708,15 @@ document.getElementById('hoverSaveAll')?.addEventListener('click', async () => {
   showToast('Saved for later');
 });
 
-// Make hover panel globally accessible (called from inline onmouseenter)
-window.showTabHoverPanel    = showTabHoverPanel;
-window.scheduleHoverPanelHide = scheduleHoverPanelHide;
+// Event delegation for tab hover panel (replaces inline onmouseenter/onmouseleave)
+document.addEventListener('mouseover', (e) => {
+  const pin = e.target.closest('.pin-item[data-domain-id]');
+  if (pin) showTabHoverPanel(pin, e);
+});
+document.addEventListener('mouseout', (e) => {
+  const pin = e.target.closest('.pin-item[data-domain-id]');
+  if (pin && !pin.contains(e.relatedTarget)) scheduleHoverPanelHide();
+});
 
 
 /* ================================================================
