@@ -1697,6 +1697,23 @@ a.todo-link:hover { text-decoration: underline; color: var(--red); }
   border-bottom: var(--border-soft);
   flex-shrink: 0;
 }
+.schedule-add-btn {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  padding: 6px 0;
+  background: none;
+  border: 1px dashed var(--ink-muted);
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  text-align: center;
+  flex-shrink: 0;
+  transition: border-color .2s, color .2s;
+}
+.schedule-add-btn:hover { border-color: var(--red); color: var(--red); }
 
 .schedule-sidebar-items {
   flex: 1;

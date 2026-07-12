@@ -3116,6 +3116,42 @@ document.addEventListener('dblclick', async (e) => {
   input.addEventListener('blur', commitNewTask);
 });
 
+// Schedule sidebar "+ task" button — inline input, syncs to Todo list
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#scheduleAddBtn')) return;
+  const sidebar = document.getElementById('scheduleSidebarItems');
+  if (!sidebar || sidebar.querySelector('.schedule-new-input')) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'schedule-task-pill';
+  wrapper.style.cssText = 'background:none;border:1px dashed var(--ink-muted);padding:6px 8px';
+  const input = document.createElement('input');
+  input.className = 'schedule-new-input';
+  input.type = 'text';
+  input.placeholder = 'new task...';
+  input.style.cssText = 'background:none;border:none;outline:none;font-family:\'Space Mono\',monospace;font-size:9px;color:var(--ink);width:100%;';
+  wrapper.appendChild(input);
+  sidebar.appendChild(wrapper);
+  input.focus();
+
+  async function commitScheduleNew() {
+    const text = input.value.trim();
+    wrapper.remove();
+    if (!text) return;
+    const id = Date.now().toString();
+    const todos = await getTodos();
+    todos.push({ id, text, done: false, createdAt: new Date().toISOString() });
+    await saveTodos(todos);
+    await renderScheduleGrid();
+    await renderTodoPanel();
+  }
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter')  { ev.preventDefault(); commitScheduleNew(); }
+    if (ev.key === 'Escape') wrapper.remove();
+  });
+  input.addEventListener('blur', commitScheduleNew);
+});
+
 // Todo list / schedule tab toggle
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.todo-tab-btn');
