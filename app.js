@@ -3089,7 +3089,7 @@ document.addEventListener('dblclick', async (e) => {
 
   const wrapper = document.createElement('div');
   wrapper.className = 'sc-chip sc-chip-new';
-  wrapper.innerHTML = `<input class="sc-chip-edit-input sc-new-input" type="text" placeholder="new task鈥?>`;
+  wrapper.innerHTML = `<input class="sc-chip-edit-input sc-new-input" type="text" placeholder="new task...">`;
   cell.appendChild(wrapper);
 
   const input = wrapper.querySelector('input');
