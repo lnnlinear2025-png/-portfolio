@@ -2308,3 +2308,96 @@ a.sc-chip-link:hover { text-decoration: underline; }
   cursor: none;
   min-width: 0;
 }
+
+/* ── Smart Digest Settings ── */
+.digest-field {
+  margin-bottom: 14px;
+}
+.digest-label {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.digest-row {
+  display: flex;
+  gap: 6px;
+}
+.digest-input {
+  flex: 1;
+  background: var(--paper2);
+  border: var(--border-soft);
+  padding: 7px 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  outline: none;
+  min-width: 0;
+}
+.digest-input:focus { border-color: var(--ink); }
+.digest-test-btn {
+  background: none;
+  border: var(--border-soft);
+  padding: 6px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s;
+}
+.digest-test-btn:hover { border-color: var(--ink); color: var(--ink); }
+.digest-hint {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+.digest-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.digest-toggle-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+.digest-toggle {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  cursor: pointer;
+}
+.digest-toggle input { opacity: 0; width: 0; height: 0; }
+.digest-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-muted);
+  border-radius: 18px;
+  transition: background .2s;
+}
+.digest-slider:before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 3px;
+  top: 3px;
+  background: var(--paper);
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.digest-toggle input:checked + .digest-slider { background: var(--ink); }
+.digest-toggle input:checked + .digest-slider:before { transform: translateX(16px); }
+.digest-status {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  margin-top: 8px;
+  min-height: 16px;
+}

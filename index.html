@@ -265,6 +265,41 @@
       <div class="tabs-title">Settings</div>
 
       <div class="settings-section">
+        <div class="section-title">Smart Digest</div>
+        <hr class="section-rule">
+        <div class="settings-hint">3 天未读的 Saved 链接自动生成摘要，推送到飞书</div>
+
+        <div class="digest-field">
+          <label class="digest-label">DeepSeek API Key</label>
+          <div class="digest-row">
+            <input type="password" class="digest-input" id="digestApiKey" placeholder="sk-..." autocomplete="off" />
+            <button class="digest-test-btn" id="digestTestApi">验证</button>
+          </div>
+          <span class="digest-hint">Key 仅存储在本机，不上传任何服务器</span>
+        </div>
+
+        <div class="digest-field">
+          <label class="digest-label">飞书 Webhook URL</label>
+          <div class="digest-row">
+            <input type="text" class="digest-input" id="digestWebhook" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..." />
+            <button class="digest-test-btn" id="digestTestFeishu">测试</button>
+          </div>
+          <span class="digest-hint">飞书群 → 群设置 → 机器人 → 添加自定义机器人 → 复制地址</span>
+        </div>
+
+        <div class="digest-toggle-row">
+          <span class="digest-toggle-label">启用 Smart Digest</span>
+          <label class="digest-toggle">
+            <input type="checkbox" id="digestEnabled" checked />
+            <span class="digest-slider"></span>
+          </label>
+        </div>
+
+        <button class="settings-add-btn" id="digestSaveBtn" style="margin-top:12px">保存设置</button>
+        <div class="digest-status" id="digestStatus"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="section-title">Keyboard shortcuts</div>
         <hr class="section-rule">
         <div class="settings-hint">

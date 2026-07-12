@@ -3,7 +3,8 @@
   "name": "Folio",
   "version": "1.0.0",
   "description": "Your personal new-tab dashboard. Save pages, map your sites, plan your week.",
-  "permissions": ["tabs", "activeTab", "storage", "history"],
+  "permissions": ["tabs", "activeTab", "storage", "history", "alarms", "notifications"],
+  "host_permissions": ["https://api.deepseek.com/*", "https://open.feishu.cn/*"],
   "commands": {
     "save-current-tab": {
       "suggested_key": { "default": "Alt+S" },

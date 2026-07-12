@@ -3371,6 +3371,86 @@ document.addEventListener('dblclick', async (e) => {
 
 
 /* ----------------------------------------------------------------
+   MARK PIN AS READ on click
+   ---------------------------------------------------------------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('.pin-title');
+  if (!a) return;
+  const item = a.closest('.pin-item[data-pin-id]');
+  if (!item) return;
+  await markPinRead(item.dataset.pinId);
+});
+
+/* ----------------------------------------------------------------
+   SMART DIGEST SETTINGS
+   ---------------------------------------------------------------- */
+async function loadDigestSettings() {
+  const data = await chrome.storage.local.get(['digestApiKey', 'digestWebhook', 'digestEnabled']);
+  const keyEl     = document.getElementById('digestApiKey');
+  const hookEl    = document.getElementById('digestWebhook');
+  const enabledEl = document.getElementById('digestEnabled');
+  if (keyEl)     keyEl.value     = data.digestApiKey  || '';
+  if (hookEl)    hookEl.value    = data.digestWebhook || '';
+  if (enabledEl) enabledEl.checked = data.digestEnabled !== false;
+}
+
+document.getElementById('digestSaveBtn')?.addEventListener('click', async () => {
+  const key     = document.getElementById('digestApiKey')?.value.trim()  || '';
+  const webhook = document.getElementById('digestWebhook')?.value.trim() || '';
+  const enabled = document.getElementById('digestEnabled')?.checked ?? true;
+  await chrome.storage.local.set({ digestApiKey: key, digestWebhook: webhook, digestEnabled: enabled });
+  const status = document.getElementById('digestStatus');
+  if (status) {
+    status.textContent = '已保存';
+    status.style.color = 'var(--green, #3d7a4a)';
+    setTimeout(() => { status.textContent = ''; }, 2000);
+  }
+});
+
+document.getElementById('digestTestApi')?.addEventListener('click', async () => {
+  const key = document.getElementById('digestApiKey')?.value.trim();
+  const status = document.getElementById('digestStatus');
+  if (!key) { if (status) { status.textContent = '请先填写 API Key'; status.style.color = 'var(--red)'; } return; }
+  if (status) { status.textContent = '验证中...'; status.style.color = 'var(--ink-muted)'; }
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: 'hi' }], max_tokens: 5 }),
+    });
+    if (res.ok) {
+      if (status) { status.textContent = 'API Key 有效 ✓'; status.style.color = 'var(--green, #3d7a4a)'; }
+    } else {
+      if (status) { status.textContent = `验证失败 (${res.status})`; status.style.color = 'var(--red)'; }
+    }
+  } catch {
+    if (status) { status.textContent = '网络错误，请检查连接'; status.style.color = 'var(--red)'; }
+  }
+});
+
+document.getElementById('digestTestFeishu')?.addEventListener('click', async () => {
+  const webhook = document.getElementById('digestWebhook')?.value.trim();
+  const status  = document.getElementById('digestStatus');
+  if (!webhook) { if (status) { status.textContent = '请先填写 Webhook URL'; status.style.color = 'var(--red)'; } return; }
+  if (status) { status.textContent = '发送中...'; status.style.color = 'var(--ink-muted)'; }
+  try {
+    const res = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ msg_type: 'text', content: { text: '✅ Folio Smart Digest 连接测试成功！' } }),
+    });
+    const data = await res.json();
+    if (data.code === 0) {
+      if (status) { status.textContent = '飞书推送成功 ✓'; status.style.color = 'var(--green, #3d7a4a)'; }
+    } else {
+      if (status) { status.textContent = `推送失败: ${data.msg || data.code}`; status.style.color = 'var(--red)'; }
+    }
+  } catch {
+    if (status) { status.textContent = '网络错误，请检查 Webhook 地址'; status.style.color = 'var(--red)'; }
+  }
+});
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
 async function init() {
@@ -3388,6 +3468,7 @@ async function init() {
     renderShortcutsPanel(),
     renderFrequentSites(),
     renderPinsPanel(),
+    loadDigestSettings(),
   ]);
 }
 
