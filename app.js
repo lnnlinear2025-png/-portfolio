@@ -2791,7 +2791,7 @@ document.addEventListener('keydown', async (e) => {
    ================================================================ */
 
 document.addEventListener('dragstart', (e) => {
-  const wrap = e.target.closest('.recent-item-wrap, .deferred-item');
+  const wrap = e.target.closest('.recent-item-wrap, .deferred-item, .pin-item');
   if (!wrap) return;
   e.dataTransfer.setData('application/json', JSON.stringify({
     url:   wrap.dataset.url,
@@ -3216,10 +3216,13 @@ async function renderPinsPanel() {
     let domain = '';
     try { domain = new URL(p.url).hostname; } catch {}
     const unreadDot = p.read ? '' : `<span class="pin-unread-dot"></span>`;
-    return `<div class="pin-item${p.read ? ' pin-read' : ''}" data-pin-id="${p.id}">
+    const safeUrl   = p.url.replace(/"/g,'&quot;');
+    const safeTitle = (p.title || p.url).replace(/"/g,'&quot;');
+    return `<div class="pin-item${p.read ? ' pin-read' : ''}" data-pin-id="${p.id}"
+         draggable="true" data-url="${safeUrl}" data-title="${safeTitle}">
       ${unreadDot}
       ${faviconImg(domain, 14, 'pin-favicon')}
-      <a class="pin-title" href="${p.url.replace(/"/g,'&quot;')}" target="_top"
+      <a class="pin-title" href="${safeUrl}" target="_top"
          title="Double-click to rename">${escapeHtml(p.title || p.url)}</a>
       <button class="pin-action-btn" data-action="delete-pin" data-pin-id="${p.id}" title="Remove">×</button>
     </div>`;
