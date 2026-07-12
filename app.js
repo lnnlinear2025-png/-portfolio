@@ -1165,8 +1165,11 @@ function renderDeferredItem(item) {
   try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
   const ago = timeAgo(item.savedAt);
 
+  const safeUrl   = item.url.replace(/"/g, '&quot;');
+  const safeTitle = (item.title || item.url).replace(/"/g, '&quot;');
   return `
-    <div class="deferred-item" data-deferred-id="${item.id}">
+    <div class="deferred-item" data-deferred-id="${item.id}"
+         draggable="true" data-url="${safeUrl}" data-title="${safeTitle}">
       <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
       <div class="deferred-info">
         <a href="${item.url}" target="_blank" rel="noopener" class="deferred-title" title="${(item.title || '').replace(/"/g, '&quot;')}">
@@ -2788,7 +2791,7 @@ document.addEventListener('keydown', async (e) => {
    ================================================================ */
 
 document.addEventListener('dragstart', (e) => {
-  const wrap = e.target.closest('.recent-item-wrap');
+  const wrap = e.target.closest('.recent-item-wrap, .deferred-item');
   if (!wrap) return;
   e.dataTransfer.setData('application/json', JSON.stringify({
     url:   wrap.dataset.url,
