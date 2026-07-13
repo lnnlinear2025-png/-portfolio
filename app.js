@@ -3385,20 +3385,35 @@ document.addEventListener('click', async (e) => {
    SMART DIGEST SETTINGS
    ---------------------------------------------------------------- */
 async function loadDigestSettings() {
-  const data = await chrome.storage.local.get(['digestApiKey', 'digestWebhook', 'digestEnabled']);
-  const keyEl     = document.getElementById('digestApiKey');
-  const hookEl    = document.getElementById('digestWebhook');
-  const enabledEl = document.getElementById('digestEnabled');
-  if (keyEl)     keyEl.value     = data.digestApiKey  || '';
-  if (hookEl)    hookEl.value    = data.digestWebhook || '';
-  if (enabledEl) enabledEl.checked = data.digestEnabled !== false;
+  const data = await chrome.storage.local.get([
+    'digestApiKey', 'digestWebhook', 'digestEnabled',
+    'digestDays', 'digestTodoDays', 'digestTodoEnabled',
+  ]);
+  const keyEl         = document.getElementById('digestApiKey');
+  const hookEl        = document.getElementById('digestWebhook');
+  const enabledEl     = document.getElementById('digestEnabled');
+  const daysEl        = document.getElementById('digestDays');
+  const todoDaysEl    = document.getElementById('digestTodoDays');
+  const todoEnabledEl = document.getElementById('digestTodoEnabled');
+  if (keyEl)         keyEl.value          = data.digestApiKey      || '';
+  if (hookEl)        hookEl.value         = data.digestWebhook     || '';
+  if (enabledEl)     enabledEl.checked    = data.digestEnabled     !== false;
+  if (daysEl)        daysEl.value         = data.digestDays        || 3;
+  if (todoDaysEl)    todoDaysEl.value     = data.digestTodoDays    || 7;
+  if (todoEnabledEl) todoEnabledEl.checked = data.digestTodoEnabled !== false;
 }
 
 document.getElementById('digestSaveBtn')?.addEventListener('click', async () => {
-  const key     = document.getElementById('digestApiKey')?.value.trim()  || '';
-  const webhook = document.getElementById('digestWebhook')?.value.trim() || '';
-  const enabled = document.getElementById('digestEnabled')?.checked ?? true;
-  await chrome.storage.local.set({ digestApiKey: key, digestWebhook: webhook, digestEnabled: enabled });
+  const key         = document.getElementById('digestApiKey')?.value.trim()  || '';
+  const webhook     = document.getElementById('digestWebhook')?.value.trim() || '';
+  const enabled     = document.getElementById('digestEnabled')?.checked     ?? true;
+  const days        = parseInt(document.getElementById('digestDays')?.value)        || 3;
+  const todoDays    = parseInt(document.getElementById('digestTodoDays')?.value)    || 7;
+  const todoEnabled = document.getElementById('digestTodoEnabled')?.checked ?? true;
+  await chrome.storage.local.set({
+    digestApiKey: key, digestWebhook: webhook, digestEnabled: enabled,
+    digestDays: days, digestTodoDays: todoDays, digestTodoEnabled: todoEnabled,
+  });
   const status = document.getElementById('digestStatus');
   if (status) {
     status.textContent = '已保存';

@@ -287,10 +287,34 @@
           <span class="digest-hint">飞书群 → 群设置 → 机器人 → 添加自定义机器人 → 复制地址</span>
         </div>
 
+        <div class="digest-field">
+          <label class="digest-label">未读链接摘要触发天数</label>
+          <div class="digest-row">
+            <input type="number" class="digest-input" id="digestDays" min="1" max="30" value="3" style="max-width:80px" />
+            <span class="digest-unit">天后未读 → 自动摘要推送</span>
+          </div>
+        </div>
+
+        <div class="digest-field">
+          <label class="digest-label">Todo 超期提醒天数</label>
+          <div class="digest-row">
+            <input type="number" class="digest-input" id="digestTodoDays" min="1" max="30" value="7" style="max-width:80px" />
+            <span class="digest-unit">天未完成 → 飞书提醒处理</span>
+          </div>
+        </div>
+
         <div class="digest-toggle-row">
-          <span class="digest-toggle-label">启用 Smart Digest</span>
+          <span class="digest-toggle-label">启用 Smart Digest（链接摘要）</span>
           <label class="digest-toggle">
             <input type="checkbox" id="digestEnabled" checked />
+            <span class="digest-slider"></span>
+          </label>
+        </div>
+
+        <div class="digest-toggle-row" style="margin-top:8px">
+          <span class="digest-toggle-label">启用 Todo 超期提醒</span>
+          <label class="digest-toggle">
+            <input type="checkbox" id="digestTodoEnabled" checked />
             <span class="digest-slider"></span>
           </label>
         </div>

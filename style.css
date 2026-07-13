@@ -2401,3 +2401,10 @@ a.sc-chip-link:hover { text-decoration: underline; }
   margin-top: 8px;
   min-height: 16px;
 }
+.digest-unit {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+}

@@ -84,26 +84,39 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 async function getDigestSettings() {
-  const data = await chrome.storage.local.get(['digestApiKey', 'digestWebhook', 'digestEnabled']);
+  const data = await chrome.storage.local.get([
+    'digestApiKey', 'digestWebhook', 'digestEnabled',
+    'digestDays', 'digestTodoDays', 'digestTodoEnabled',
+  ]);
   return {
-    apiKey:  data.digestApiKey  || '',
-    webhook: data.digestWebhook || '',
-    enabled: data.digestEnabled !== false,
+    apiKey:       data.digestApiKey      || '',
+    webhook:      data.digestWebhook     || '',
+    enabled:      data.digestEnabled     !== false,
+    days:         data.digestDays        || 3,
+    todoDays:     data.digestTodoDays    || 7,
+    todoEnabled:  data.digestTodoEnabled !== false,
   };
 }
 
 async function runDigestCheck() {
-  const { apiKey, webhook, enabled } = await getDigestSettings();
-  if (!enabled || !apiKey || !webhook) return;
+  const { apiKey, webhook, enabled, days, todoDays, todoEnabled } = await getDigestSettings();
+  if (!webhook) return;
+
+  // Todo overdue check
+  if (todoEnabled) {
+    await runTodoOverdueCheck(webhook, todoDays);
+  }
+
+  if (!enabled || !apiKey) return;
 
   const { pins = [] } = await chrome.storage.sync.get('pins');
-  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+  const threshold = days * 24 * 60 * 60 * 1000;
   const now = Date.now();
 
   const candidates = pins.filter(p => {
     if (p.read || p.digested) return false;
     const saved = p.savedAt ? new Date(p.savedAt).getTime() : parseInt(p.id, 10);
-    return (now - saved) >= THREE_DAYS;
+    return (now - saved) >= threshold;
   });
 
   if (candidates.length === 0) return;
@@ -186,6 +199,73 @@ async function summarizeWithDeepSeek(text, title, apiKey) {
   if (!res.ok) return null;
   const data = await res.json();
   return data.choices?.[0]?.message?.content?.trim() || null;
+}
+
+async function runTodoOverdueCheck(webhook, todoDays) {
+  const { todos = [] } = await chrome.storage.sync.get('todos');
+  const threshold = todoDays * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const overdue = todos.filter(t => {
+    if (t.done || t.overdueNotified) return false;
+    const created = t.createdAt ? new Date(t.createdAt).getTime() : parseInt(t.id, 10);
+    return (now - created) >= threshold;
+  });
+
+  if (overdue.length === 0) return;
+
+  for (const todo of overdue) {
+    const daysOld = Math.floor((now - new Date(todo.createdAt || parseInt(todo.id, 10)).getTime()) / 86400000);
+    await sendTodoOverdueToFeishu(webhook, todo, daysOld, todoDays);
+    todo.overdueNotified = true;
+  }
+
+  const updated = todos.map(t => overdue.find(o => o.id === t.id) || t);
+  await chrome.storage.sync.set({ todos: updated });
+
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/icon48.png',
+    title: 'Folio Todo 提醒',
+    message: `${overdue.length} 个待办已超过 ${todoDays} 天未完成`,
+  });
+}
+
+async function sendTodoOverdueToFeishu(webhook, todo, daysOld, todoDays) {
+  await fetch(webhook, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      msg_type: 'interactive',
+      card: {
+        header: {
+          title: { tag: 'plain_text', content: '⏰ Folio Todo 超期提醒' },
+          template: 'orange',
+        },
+        elements: [
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: `**${todo.text}**\n已创建 ${daysOld} 天，超过你设定的 ${todoDays} 天提醒阈值`,
+            },
+          },
+          { tag: 'hr' },
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: todo.url ? `来源：${todo.url}` : '手动添加的任务',
+            },
+          },
+          {
+            tag: 'note',
+            elements: [{ tag: 'plain_text', content: '打开 Folio 新标签页 → Todo 处理此任务' }],
+          },
+        ],
+      },
+    }),
+  });
 }
 
 async function sendToFeishu(webhook, title, url, summary, savedAt) {
