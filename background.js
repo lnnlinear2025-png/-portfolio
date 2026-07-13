@@ -71,16 +71,21 @@ updateBadge();
    SMART DIGEST — 3-day unread check + DeepSeek summary + Feishu push
    ---------------------------------------------------------------- */
 
+const WORKERS_URL = 'https://folio-agent.lnnlinear2025.workers.dev';
+const WORKERS_SECRET = 'folio2025lnn';
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create('folio-digest-check', { periodInMinutes: 60 });
+  chrome.alarms.create('folio-agent-poll',   { periodInMinutes: 1 });
 });
 chrome.runtime.onStartup.addListener(() => {
   chrome.alarms.create('folio-digest-check', { periodInMinutes: 60 });
+  chrome.alarms.create('folio-agent-poll',   { periodInMinutes: 1 });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name !== 'folio-digest-check') return;
-  await runDigestCheck();
+  if (alarm.name === 'folio-digest-check') await runDigestCheck();
+  if (alarm.name === 'folio-agent-poll')   await pollAgentCommands();
 });
 
 async function getDigestSettings() {
@@ -259,13 +264,103 @@ async function sendTodoOverdueToFeishu(webhook, todo, daysOld, todoDays) {
             },
           },
           {
-            tag: 'note',
-            elements: [{ tag: 'plain_text', content: '打开 Folio 新标签页 → Todo 处理此任务' }],
+            tag: 'action',
+            actions: [
+              {
+                tag: 'button',
+                text: { tag: 'plain_text', content: '✓ 标记完成' },
+                type: 'primary',
+                value: { action: 'done', todoId: todo.id },
+                confirm: {
+                  title: { tag: 'plain_text', content: '确认' },
+                  text:  { tag: 'plain_text', content: '将此任务标记为完成？' },
+                },
+              },
+              {
+                tag: 'button',
+                text: { tag: 'plain_text', content: '→ 延期一周' },
+                type: 'default',
+                value: { action: 'postpone', todoId: todo.id, days: 7 },
+              },
+              {
+                tag: 'button',
+                text: { tag: 'plain_text', content: '× 删除' },
+                type: 'danger',
+                value: { action: 'delete', todoId: todo.id },
+                confirm: {
+                  title: { tag: 'plain_text', content: '确认删除' },
+                  text:  { tag: 'plain_text', content: '删除后无法恢复' },
+                },
+              },
+            ],
           },
         ],
       },
     }),
   });
+}
+
+/* ----------------------------------------------------------------
+   AGENT POLL — 每分钟从 Workers 取指令并执行
+   ---------------------------------------------------------------- */
+async function pollAgentCommands() {
+  try {
+    const res = await fetch(`${WORKERS_URL}/commands`, {
+      headers: { 'X-Folio-Secret': WORKERS_SECRET },
+    });
+    if (!res.ok) return;
+    const commands = await res.json();
+    if (!commands.length) return;
+
+    for (const cmd of commands) {
+      await executeCommand(cmd);
+      // 告知 Workers 已执行，删掉这条指令
+      await fetch(`${WORKERS_URL}/ack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Folio-Secret': WORKERS_SECRET },
+        body: JSON.stringify({ id: cmd.id }),
+      });
+    }
+  } catch (err) {
+    console.error('[Folio] pollAgentCommands error', err);
+  }
+}
+
+async function executeCommand(cmd) {
+  const { action, todoId, days } = cmd;
+  const { todos = [] } = await chrome.storage.sync.get('todos');
+
+  if (action === 'done') {
+    const todo = todos.find(t => t.id === todoId);
+    if (todo) { todo.done = true; todo.completedAt = new Date().toISOString(); }
+    await chrome.storage.sync.set({ todos });
+    chrome.notifications.create({
+      type: 'basic', iconUrl: 'icons/icon48.png',
+      title: 'Folio', message: `「${todo?.text || '任务'}」已标记完成`,
+    });
+
+  } else if (action === 'delete') {
+    await chrome.storage.sync.set({ todos: todos.filter(t => t.id !== todoId) });
+    chrome.notifications.create({
+      type: 'basic', iconUrl: 'icons/icon48.png',
+      title: 'Folio', message: '任务已删除',
+    });
+
+  } else if (action === 'postpone') {
+    const todo = todos.find(t => t.id === todoId);
+    if (todo) {
+      const postponeDays = days || 7;
+      // 重置 createdAt 相当于延期
+      const newDate = new Date(Date.now() + postponeDays * 24 * 60 * 60 * 1000);
+      todo.createdAt = newDate.toISOString();
+      todo.overdueNotified = false;
+    }
+    await chrome.storage.sync.set({ todos });
+    chrome.notifications.create({
+      type: 'basic', iconUrl: 'icons/icon48.png',
+      title: 'Folio', message: `「${todo?.text || '任务'}」已延期 ${days || 7} 天`,
+    });
+  }
 }
 
 async function sendToFeishu(webhook, title, url, summary, savedAt) {
